@@ -1,0 +1,49 @@
+terraform {
+  required_providers {
+    azurerm = {
+      source = "hashicorp/azurerm"
+      version = "~>2.0"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {}
+}
+
+resource "azurerm_resource_group" "aula_03" {
+  name     = "aula_03"
+  location = "West Europe"
+}
+
+resource "azurerm_virtual_network" "vnet_aula_03" {
+  name                = "vnet_aula_03"
+  location            = azurerm_resource_group.aula_03.location
+  resource_group_name = azurerm_resource_group.aula_03.name
+  address_space       = ["10.0.0.0/16"]
+
+  tags = {
+    environment = "Production"
+    turma = "as03"
+    faculdade = "impacta"
+  }
+}
+
+resource "null_resource" "script"{
+
+    provisioner "remote-exec"  {
+        connection {
+            type = "ssh"
+            user = var.user
+            password = var.password
+            host = azurerm_public_ip.ip2-aula_03.ip_address
+        }
+
+        inline = [
+            "sudo apt-get update",
+            "sudo debconfig-set-selections <<< \"mysql-server mysql-server/root_password password rootpw\"",
+            "sudo debconfig-set-selections <<< \"mysql-server mysql-server/root_password_again password rootpw\"",
+            "sudo apt-get install -y mysql-server-5.7"
+        ]
+    }   
+}
